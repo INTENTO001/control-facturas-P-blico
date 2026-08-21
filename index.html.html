@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Control de Facturas — Seguimiento COMEX</title>
+<style>
+  :root{
+    --bg:#F5F6F8;
+    --surface:#FFFFFF;
+    --ink:#16202C;
+    --ink-soft:#5B6675;
+    --line:#E3E6EB;
+    --navy:#16202C;
+    --teal:#0F6B5C;
+    --teal-bg:#E1F3EE;
+    --amber:#9A5B00;
+    --amber-bg:#FFF1D9;
+    --rose:#B0143C;
+    --rose-bg:#FBE3EA;
+    --gray-bg:#EDEFF2;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    --sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:var(--sans); background:var(--bg); color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 20px 60px;}
+  .top{
+    background:var(--navy); color:#fff; border-radius:12px; padding:20px 24px;
+    margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .top h1{margin:0; font-size:18px; font-weight:650; letter-spacing:.01em;}
+  .top p{margin:4px 0 0; font-size:12.5px; color:#B8C2CE;}
+  .top .right{display:flex; align-items:center; gap:10px;}
+  .top .datebadge{
+    font-family:var(--mono); font-size:12px; background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.15); padding:6px 10px; border-radius:8px; color:#DCE3EA;
+  }
+  .top .modebadge{
+    font-size:11px; font-weight:700; padding:5px 10px; border-radius:8px; letter-spacing:.02em;
+  }
+  .top .modebadge.github{background:#1F2B3A; color:#8FE3C7; border:1px solid #2A3A4D;}
+  .top .modebadge.local{background:#3A2F1F; color:#F0C98A; border:1px solid #4D3F2A;}
+  .gearBtn{
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); color:#DCE3EA;
+    font-size:11px; padding:5px 10px; border-radius:8px; cursor:pointer;
+  }
+  .gearBtn:hover{background:rgba(255,255,255,.16);}
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px 20px; margin-bottom:16px;}
+  .card h2{font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin:0 0 10px;}
+
+  textarea{
+    width:100%; min-height:110px; resize:vertical; border:1px solid var(--line); border-radius:8px;
+    padding:10px 12px; font-family:var(--mono); font-size:12.5px; color:var(--ink); background:#FBFBFC;
+  }
+  textarea:focus{outline:2px solid var(--teal); outline-offset:1px;}
+
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;}
+  button{
+    font-family:var(--sans); font-size:13px; font-weight:600; border:none; border-radius:8px;
+    padding:9px 16px; cursor:pointer; transition:opacity .15s;
+  }
+  button:hover{opacity:.88;}
+  button:active{transform:translateY(1px);}
+  button:disabled{opacity:.5; cursor:default;}
+  .btn-primary{background:var(--teal); color:#fff;}
+  .btn-ghost{background:var(--gray-bg); color:var(--ink);}
+  .btn-danger{background:transparent; color:var(--rose); border:1px solid var(--rose-bg);}
+  .btn-link{background:transparent; color:var(--teal); padding:6px 0; text-decoration:underline; font-size:12.5px;}
+  #status{font-size:12px; color:var(--ink-soft);}
+
+  .summary{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px;}
+  .stat{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px;}
+  .stat .n{font-family:var(--mono); font-size:26px; font-weight:600;}
+  .stat .l{font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; margin-top:2px;}
+  .stat.revisar .n{color:var(--rose);}
+  .stat.confirmadas .n{color:var(--teal);}
+  .stat.archivadas .n{color:var(--ink-soft);}
+  .stat.total .n{color:var(--ink);}
+
+  .tabs{display:flex; gap:6px; margin-bottom:12px;}
+  .tab{
+    padding:7px 14px; border-radius:20px; font-size:12.5px; font-weight:600; cursor:pointer;
+    background:var(--gray-bg); color:var(--ink-soft); border:1px solid transparent;
+  }
+  .tab.active{background:var(--navy); color:#fff;}
+
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  thead th{
+    text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft);
+    border-bottom:1px solid var(--line); padding:8px 10px; white-space:nowrap;
+  }
+  tbody td{padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tbody tr:hover{background:#FAFBFC;}
+  .oc{font-family:var(--mono); font-weight:600;}
+  .dias{font-family:var(--mono); text-align:center;}
+  .pill{
+    display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;
+  }
+  .pill.nuevo{background:var(--amber-bg); color:var(--amber);}
+  .pill.pendiente{background:var(--rose-bg); color:var(--rose);}
+  .pill.confirmada{background:var(--teal-bg); color:var(--teal);}
+  .pill.no_aplica{background:var(--gray-bg); color:var(--ink-soft);}
+  .pill.archivada{background:var(--gray-bg); color:var(--ink-soft);}
+
+  select.estado-select{
+    font-family:var(--sans); font-size:12px; font-weight:600; border-radius:6px; border:1px solid var(--line);
+    padding:5px 6px; background:#fff; color:var(--ink);
+  }
+  input.nota{
+    width:150px; font-size:12px; border:1px solid var(--line); border-radius:6px; padding:5px 7px;
+    font-family:var(--sans);
+  }
+  .muted{color:var(--ink-soft); font-size:11.5px;}
+  .empty{padding:30px; text-align:center; color:var(--ink-soft); font-size:13px;}
+  .help{font-size:11.5px; color:var(--ink-soft); margin-top:8px; line-height:1.5;}
+  .footer-row{display:flex; justify-content:space-between; align-items:center; margin-top:6px;}
+
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:12px; font-weight:600; margin-bottom:5px; color:var(--ink);}
+  .field input{
+    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:8px; font-size:13px;
+    font-family:var(--sans);
+  }
+  .field .hint{font-size:11px; color:var(--ink-soft); margin-top:4px;}
+  #setupError{font-size:12.5px; color:var(--rose); margin-top:10px; display:none;}
+  #setupScreen{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div>
+      <h1>Control de Facturas — Seguimiento COMEX</h1>
+      <p>Solo revisa lo que cambió desde ayer. Lo confirmado y lo ya recibido no vuelve a aparecer.</p>
+    </div>
+    <div class="right">
+      <span class="modebadge" id="modeBadge" style="display:none;"></span>
+      <button class="gearBtn" id="gearBtn" style="display:none;" title="Cambiar configuración de guardado">⚙ Configuración</button>
+      <div class="datebadge" id="todayBadge"></div>
+    </div>
+  </div>
+
+  <div class="card" id="setupScreen">
+    <h2>Conectar guardado entre dispositivos</h2>
+    <p class="muted" style="margin-top:-4px;">Para que este registro se vea igual desde el celular, la laptop de la oficina, etc., conéctalo a un repositorio de GitHub. Los datos se guardan ahí, no en este navegador.</p>
+    <div class="field">
+      <label>Usuario u organización de GitHub</label>
+      <input id="cfgOwner" placeholder="ej. jperez">
+    </div>
+    <div class="field">
+      <label>Nombre del repositorio</label>
+      <input id="cfgRepo" placeholder="ej. control-facturas">
+    </div>
+    <div class="field">
+      <label>Token de acceso personal (fine-grained, con permiso Contents: Read and write, solo para ese repo)</label>
+      <input id="cfgToken" type="password" placeholder="github_pat_...">
+      <div class="hint">Este token se guarda solo en este navegador (nunca se sube al repositorio). Debes ingresarlo una vez en cada dispositivo desde el que quieras usar la herramienta.</div>
+    </div>
+    <div class="row">
+      <button class="btn-primary" id="cfgConnectBtn">Conectar y verificar</button>
+      <button class="btn-link" id="cfgLocalBtn" type="button">Prefiero usar solo este navegador, sin GitHub</button>
+    </div>
+    <div id="setupError"></div>
+  </div>
+
+  <div id="appMain" style="display:none;">
+    <div class="card">
+      <h2>1. Pegar la lista de hoy</h2>
+      <textarea id="pasteArea" placeholder="Pega aquí la tabla copiada con el botón 'Copy' del sistema (o el contenido del Excel), incluyendo la fila de encabezados: #, Compra, O.Compra, F.Reserva, Días pendientes, Cant.Contenedor, Proveedor, etc."></textarea>
+      <div class="row">
+        <button class="btn-primary" id="processBtn">Procesar lista de hoy</button>
+        <span id="status"></span>
+      </div>
+      <div class="help">La herramienta detecta las columnas por su nombre (O.Compra, F.Reserva, Proveedor, Días pendientes, Cant.Contenedor, División, Fecha Entrega, Lugar Entrega). Solo necesita que la primera línea pegada sea el encabezado.</div>
+    </div>
+
+    <div class="summary">
+      <div class="stat revisar"><div class="n" id="statRevisar">–</div><div class="l">Por revisar</div></div>
+      <div class="stat confirmadas"><div class="n" id="statConfirmadas">–</div><div class="l">Confirmadas</div></div>
+      <div class="stat archivadas"><div class="n" id="statArchivadas">–</div><div class="l">Recibidas / archivadas</div></div>
+      <div class="stat total"><div class="n" id="statTotal">–</div><div class="l">Total en registro</div></div>
+    </div>
+
+    <div class="card">
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-filter="revisar">Por revisar</div>
+        <div class="tab" data-filter="confirmada">Confirmadas</div>
+        <div class="tab" data-filter="archivada">Archivadas</div>
+        <div class="tab" data-filter="todas">Todas</div>
+      </div>
+      <div id="tableHost"></div>
+      <div class="footer-row">
+        <span class="muted" id="countLabel"></span>
+        <button class="btn-danger" id="resetBtn">Borrar todo mi registro</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ======================= MODO DE GUARDADO ======================= */
+// 'claude'  -> dentro de Claude, usa window.storage (persistente, no requiere config)
+// 'github'  -> fuera de Claude, guarda un único archivo JSON en un repo de GitHub (multi-dispositivo)
+// 'local'   -> fuera de Claude, guarda en localStorage de este navegador (respaldo simple, un solo dispositivo)
+let STORAGE_MODE = null;
+let ghCache = null; // {data:{}, sha:string|null}
+
+function getGhConfig(){
+  return {
+    owner: localStorage.getItem('gh_owner')||'',
+    repo: localStorage.getItem('gh_repo')||'',
+    token: localStorage.getItem('gh_token')||'',
+    path: localStorage.getItem('gh_path')||'data.json'
+  };
+}
+function setGhConfig(cfg){
+  localStorage.setItem('gh_owner', cfg.owner);
+  localStorage.setItem('gh_repo', cfg.repo);
+  localStorage.setItem('gh_token', cfg.token);
+  localStorage.setItem('gh_path', cfg.path || 'data.json');
+}
+function clearGhConfig(){
+  ['gh_owner','gh_repo','gh_token','gh_path'].forEach(k=>localStorage.removeItem(k));
+}
+function hasGhConfig(){
+  const c = getGhConfig();
+  return !!(c.owner && c.repo && c.token);
+}
+
+function b64EncodeUnicode(str){
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin);
+}
+function b64DecodeUnicode(str){
+  const bin = atob(str.replace(/\n/g,''));
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+async function ghApi(opts={}){
+  const cfg = getGhConfig();
+  const url = 'https://api.github.com/repos/' + encodeURIComponent(cfg.owner) + '/' + encodeURIComponent(cfg.repo) + '/contents/' + encodeURIComponent(cfg.path);
+  return fetch(url, {
+    ...opts,
+    headers: {
+      'Authorization': 'Bearer ' + cfg.token,
+      'Accept': 'application/vnd.github+json',
+      ...(opts.headers||{})
+    }
+  });
+}
+
+async function ghLoad(){
+  const res = await ghApi();
+  if(res.status === 404){
+    ghCache = {data:{}, sha:null};
+    return ghCache;
+  }
+  if(!res.ok){
+    const t = await res.text().catch(()=> '');
+    throw new Error('GitHub respondió ' + res.status + '. ' + t.slice(0,200));
+  }
+  const json = await res.json();
+  const content = json.content ? b64DecodeUnicode(json.content) : '{}';
+  let data = {};
+  try{ data = JSON.parse(content || '{}'); }catch(e){ data = {}; }
+  ghCache = {data, sha: json.sha};
+  return ghCache;
+}
+
+async function ghSaveAll(){
+  const body = {
+    message: 'Actualiza registro de facturas — ' + new Date().toISOString(),
+    content: b64EncodeUnicode(JSON.stringify(ghCache.data, null, 2))
+  };
+  if(ghCache.sha) body.sha = ghCache.sha;
+  const res = await ghApi({method:'PUT', body: JSON.stringify(body), headers:{'Content-Type':'application/json'}});
+  if(!res.ok){
+    const t = await res.text().catch(()=> '');
+    throw new Error('No se pudo guardar en GitHub (' + res.status + '). ' + t.slice(0,200));
+  }
+  const json = await res.json();
+  ghCache.sha = json.content.sha;
+}
+
+/* ======================= NÚCLEO DE LA APP ======================= */
+
+const todayISO = new Date().toISOString().slice(0,10);
+const todayDisplay = new Date().toLocaleDateString('es-PE', {day:'2-digit', month:'2-digit', year:'numeric'});
+document.getElementById('todayBadge').textContent = 'Hoy · ' + todayDisplay;
+
+let currentFilter = 'revisar';
+let records = {};
+
+function setStatus(msg, isError){
+  const el = document.getElementById('status');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.color = isError ? '#B0143C' : '#5B6675';
+}
+
+function normalize(s){
+  return (s||'').toString().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^\w.\s]/g,'')
+    .trim();
+}
+
+const HEADER_MAP = {
+  'o.compra':'oc',
+  'compra':'tipoCompra',
+  'proveedor':'proveedor',
+  'dias pendientes':'dias',
+  'division':'division',
+  'tipo':'tipo',
+  'fecha entrega':'fechaEntrega',
+  'lugar entrega':'lugarEntrega',
+  'f.reserva':'freserva',
+  'cant.contenedor':'contenedores'
+};
+
+function parsePasted(text){
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0);
+  if(lines.length < 2) return {error:'Pega al menos la fila de encabezados y una fila de datos.'};
+
+  const delim = lines[0].includes('\t') ? '\t' : ',';
+  const header = lines[0].split(delim).map(normalize);
+
+  const colIdx = {};
+  header.forEach((h,i)=>{
+    if(HEADER_MAP[h] && colIdx[HEADER_MAP[h]] === undefined){
+      colIdx[HEADER_MAP[h]] = i;
+    }
+  });
+
+  if(colIdx.oc === undefined){
+    return {error:'No se detectó la columna "O.Compra" en el encabezado pegado. Verifica que copiaste la tabla con encabezados incluidos.'};
+  }
+
+  const rows = [];
+  const dupCounter = {};
+  for(let i=1;i<lines.length;i++){
+    const cells = lines[i].split(delim);
+    const oc = (cells[colIdx.oc]||'').trim();
+    if(!oc) continue;
+    const row = {
+      oc,
+      proveedor: colIdx.proveedor!==undefined ? (cells[colIdx.proveedor]||'').trim() : '',
+      dias: colIdx.dias!==undefined ? (cells[colIdx.dias]||'').trim() : '',
+      division: colIdx.division!==undefined ? (cells[colIdx.division]||'').trim() : '',
+      tipoCompra: colIdx.tipoCompra!==undefined ? (cells[colIdx.tipoCompra]||'').trim() : '',
+      tipo: colIdx.tipo!==undefined ? (cells[colIdx.tipo]||'').trim() : '',
+      fechaEntrega: colIdx.fechaEntrega!==undefined ? (cells[colIdx.fechaEntrega]||'').trim() : '',
+      lugarEntrega: colIdx.lugarEntrega!==undefined ? (cells[colIdx.lugarEntrega]||'').trim() : '',
+      freserva: colIdx.freserva!==undefined ? (cells[colIdx.freserva]||'').trim() : '',
+      contenedores: colIdx.contenedores!==undefined ? (cells[colIdx.contenedores]||'').trim() : '',
+    };
+    // Una misma O.Compra puede repetirse en varias filas (una por contenedor/embarque),
+    // cada una con su propia Fecha Entrega y Días pendientes. Se arma una clave compuesta
+    // para no perder esas filas al guardar.
+    const base = [row.oc, row.freserva, row.fechaEntrega].filter(Boolean).join('__') || row.oc;
+    dupCounter[base] = (dupCounter[base]||0) + 1;
+    row.lineKey = dupCounter[base] > 1 ? base + '__' + dupCounter[base] : base;
+    rows.push(row);
+  }
+  if(rows.length===0) return {error:'No se encontraron filas de datos válidas (sin O.Compra).'};
+  return {rows};
+}
+
+function sanitizeKey(s){
+  return (s||'').toString().replace(/[^a-zA-Z0-9_-]/g,'-');
+}
+
+async function loadAllRecords(){
+  if(STORAGE_MODE === 'claude'){
+    const out = {};
+    try{
+      const listRes = await window.storage.list('orders:', false);
+      const keys = (listRes && listRes.keys) ? listRes.keys : [];
+      for(const k of keys){
+        try{
+          const r = await window.storage.get(k, false);
+          if(r && r.value){
+            const rec = JSON.parse(r.value);
+            out[rec.lineKey || rec.oc] = rec;
+          }
+        }catch(e){ /* skip unreadable key */ }
+      }
+    }catch(e){ /* no records yet */ }
+    return out;
+  }
+  if(STORAGE_MODE === 'github'){
+    if(!ghCache) await ghLoad();
+    return ghCache.data || {};
+  }
+  // local
+  try{
+    const raw = localStorage.getItem('cf_records');
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+
+// Guarda TODO el estado actual en el backend correspondiente, en una sola operación
+// (para GitHub esto evita crear un commit por cada fila cuando se procesa la lista del día).
+async function persistRecords(){
+  if(STORAGE_MODE === 'claude'){
+    for(const key in records){
+      try{ await window.storage.set('orders:'+sanitizeKey(key), JSON.stringify(records[key]), false); }
+      catch(e){ console.error('No se pudo guardar', key, e); }
+    }
+    return;
+  }
+  if(STORAGE_MODE === 'github'){
+    if(!ghCache) ghCache = {data:{}, sha:null};
+    ghCache.data = records;
+    await ghSaveAll();
+    return;
+  }
+  localStorage.setItem('cf_records', JSON.stringify(records));
+}
+
+async function processToday(){
+  const text = document.getElementById('pasteArea').value;
+  const parsed = parsePasted(text);
+  if(parsed.error){
+    setStatus(parsed.error, true);
+    return;
+  }
+  setStatus('Procesando…');
+  document.getElementById('processBtn').disabled = true;
+
+  const seenToday = new Set();
+
+  for(const row of parsed.rows){
+    seenToday.add(row.lineKey);
+    const existing = records[row.lineKey];
+    if(existing){
+      const wasArchived = existing.estado === 'archivada';
+      records[row.lineKey] = {
+        ...existing,
+        proveedor: row.proveedor || existing.proveedor,
+        dias: row.dias,
+        division: row.division || existing.division,
+        tipoCompra: row.tipoCompra || existing.tipoCompra,
+        tipo: row.tipo || existing.tipo,
+        fechaEntrega: row.fechaEntrega || existing.fechaEntrega,
+        lugarEntrega: row.lugarEntrega || existing.lugarEntrega,
+        freserva: row.freserva || existing.freserva,
+        contenedores: row.contenedores || existing.contenedores,
+        ultimaActualizacion: todayISO,
+        estado: wasArchived ? 'pendiente' : existing.estado,
+        nota: wasArchived ? (existing.nota ? existing.nota + ' · reapareció en lista' : 'Reapareció en lista') : existing.nota
+      };
+    } else {
+      records[row.lineKey] = {
+        lineKey: row.lineKey,
+        oc: row.oc,
+        proveedor: row.proveedor,
+        dias: row.dias,
+        division: row.division,
+        tipoCompra: row.tipoCompra,
+        tipo: row.tipo,
+        fechaEntrega: row.fechaEntrega,
+        lugarEntrega: row.lugarEntrega,
+        freserva: row.freserva,
+        contenedores: row.contenedores,
+        estado: 'nuevo',
+        nota: '',
+        primeraVez: todayISO,
+        ultimaActualizacion: todayISO
+      };
+    }
+  }
+
+  for(const key in records){
+    if(!seenToday.has(key) && records[key].estado !== 'archivada'){
+      records[key].estado = 'archivada';
+      records[key].fechaArchivo = todayISO;
+    }
+  }
+
+  try{
+    await persistRecords();
+    setStatus('Listo — ' + parsed.rows.length + ' líneas procesadas y guardadas.');
+  }catch(e){
+    setStatus('Se procesó localmente pero falló el guardado: ' + e.message, true);
+  }
+
+  document.getElementById('processBtn').disabled = false;
+  document.getElementById('pasteArea').value = '';
+  render();
+}
+
+async function updateField(key, field, value){
+  const rec = records[key];
+  if(!rec) return;
+  rec[field] = value;
+  rec.ultimaActualizacion = todayISO;
+  if(field === 'estado' && value !== 'archivada'){
+    delete rec.fechaArchivo;
+  }
+  render();
+  try{
+    await persistRecords();
+  }catch(e){
+    setStatus('No se pudo guardar el cambio: ' + e.message, true);
+  }
+}
+
+async function resetAll(){
+  if(!confirm('Esto borra todo tu registro de seguimiento guardado. ¿Continuar?')) return;
+  records = {};
+  try{
+    if(STORAGE_MODE === 'claude'){
+      const listRes = await window.storage.list('orders:', false);
+      const keys = (listRes && listRes.keys) ? listRes.keys : [];
+      for(const k of keys){
+        try{ await window.storage.delete(k, false); }catch(e){}
+      }
+    } else {
+      await persistRecords();
+    }
+  }catch(e){}
+  render();
+  setStatus('Registro borrado.');
+}
+
+const ESTADOS = [
+  ['nuevo','Nuevo, por revisar'],
+  ['pendiente','Pendiente, en seguimiento'],
+  ['confirmada','Confirmada'],
+  ['no_aplica','No aplica'],
+  ['archivada','Recibido / archivado']
+];
+
+function pillLabel(estado){
+  const found = ESTADOS.find(e=>e[0]===estado);
+  return found ? found[1] : estado;
+}
+
+function render(){
+  const all = Object.values(records);
+  const revisar = all.filter(r => r.estado==='nuevo' || r.estado==='pendiente');
+  const confirmadas = all.filter(r => r.estado==='confirmada');
+  const archivadas = all.filter(r => r.estado==='archivada');
+
+  document.getElementById('statRevisar').textContent = revisar.length;
+  document.getElementById('statConfirmadas').textContent = confirmadas.length;
+  document.getElementById('statArchivadas').textContent = archivadas.length;
+  document.getElementById('statTotal').textContent = all.length;
+
+  let list;
+  if(currentFilter==='revisar') list = revisar;
+  else if(currentFilter==='confirmada') list = confirmadas;
+  else if(currentFilter==='archivada') list = archivadas;
+  else list = all;
+
+  list = list.slice().sort((a,b)=>{
+    if(a.oc !== b.oc) return a.oc.localeCompare(b.oc, undefined, {numeric:true});
+    const da = parseFloat(a.dias); const db = parseFloat(b.dias);
+    if(isNaN(da) && isNaN(db)) return 0;
+    if(isNaN(da)) return 1;
+    if(isNaN(db)) return -1;
+    return db - da;
+  });
+
+  const host = document.getElementById('tableHost');
+  document.getElementById('countLabel').textContent = list.length + ' línea(s) en esta vista';
+
+  if(list.length===0){
+    host.innerHTML = '<div class="empty">No hay líneas en esta vista todavía. Pega la lista de hoy arriba para empezar.</div>';
+    return;
+  }
+
+  let html = '<table><thead><tr>' +
+    '<th>O.Compra</th><th>F.Reserva</th><th>Proveedor</th><th>División</th><th>Contened.</th><th>Días pend.</th>' +
+    '<th>Fecha entrega</th><th>Lugar</th><th>Estado</th><th>Nota</th><th>Actualizado</th>' +
+    '</tr></thead><tbody>';
+
+  let prevOc = null;
+  for(const r of list){
+    const sameAsPrev = r.oc === prevOc;
+    prevOc = r.oc;
+    html += '<tr>' +
+      '<td class="oc">'+(sameAsPrev ? '' : escapeHtml(r.oc))+'</td>' +
+      '<td>'+escapeHtml(r.freserva||'—')+'</td>' +
+      '<td>'+escapeHtml(r.proveedor||'—')+'</td>' +
+      '<td>'+escapeHtml(r.division||'—')+'</td>' +
+      '<td class="dias">'+escapeHtml(r.contenedores||'—')+'</td>' +
+      '<td class="dias">'+escapeHtml(r.dias||'—')+'</td>' +
+      '<td>'+escapeHtml(r.fechaEntrega||'—')+'</td>' +
+      '<td>'+escapeHtml(r.lugarEntrega||'—')+'</td>' +
+      '<td>'+estadoSelectHtml(r)+'</td>' +
+      '<td><input class="nota" data-key="'+escapeAttr(r.lineKey)+'" data-field="nota" value="'+escapeAttr(r.nota||'')+'" placeholder="ej. visto en correo 21/08"></td>' +
+      '<td class="muted">'+(r.ultimaActualizacion||'—')+'</td>' +
+      '</tr>';
+  }
+  html += '</tbody></table>';
+  host.innerHTML = html;
+
+  host.querySelectorAll('select.estado-select').forEach(sel=>{
+    sel.addEventListener('change', (e)=>{
+      updateField(e.target.dataset.key, 'estado', e.target.value);
+    });
+  });
+  host.querySelectorAll('input.nota').forEach(inp=>{
+    inp.addEventListener('change', (e)=>{
+      updateField(e.target.dataset.key, 'nota', e.target.value);
+    });
+  });
+}
+
+function estadoSelectHtml(r){
+  let opts = ESTADOS.map(([val,label])=>
+    '<option value="'+val+'" '+(r.estado===val?'selected':'')+'>'+label+'</option>'
+  ).join('');
+  return '<span class="pill '+r.estado+'">'+pillLabel(r.estado)+'</span> ' +
+    '<select class="estado-select" data-key="'+escapeAttr(r.lineKey)+'">'+opts+'</select>';
+}
+
+function escapeHtml(s){
+  return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s){ return escapeHtml(s); }
+
+document.getElementById('processBtn').addEventListener('click', processToday);
+document.getElementById('resetBtn').addEventListener('click', resetAll);
+document.getElementById('tabs').addEventListener('click', (e)=>{
+  const tab = e.target.closest('.tab');
+  if(!tab) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  currentFilter = tab.dataset.filter;
+  render();
+});
+
+/* ======================= ARRANQUE Y CONFIGURACIÓN ======================= */
+
+function showSetupScreen(prefill){
+  document.getElementById('appMain').style.display = 'none';
+  document.getElementById('setupScreen').style.display = 'block';
+  document.getElementById('gearBtn').style.display = 'none';
+  document.getElementById('modeBadge').style.display = 'none';
+  if(prefill){
+    document.getElementById('cfgOwner').value = prefill.owner||'';
+    document.getElementById('cfgRepo').value = prefill.repo||'';
+  }
+  document.getElementById('setupError').style.display = 'none';
+}
+
+function updateModeBadge(){
+  const badge = document.getElementById('modeBadge');
+  const gear = document.getElementById('gearBtn');
+  if(STORAGE_MODE === 'github'){
+    badge.textContent = '☁ GitHub · sincronizado';
+    badge.className = 'modebadge github';
+    badge.style.display = 'inline-block';
+    gear.style.display = 'inline-block';
+  } else if(STORAGE_MODE === 'local'){
+    badge.textContent = '💻 Solo este navegador';
+    badge.className = 'modebadge local';
+    badge.style.display = 'inline-block';
+    gear.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+    gear.style.display = 'none';
+  }
+}
+
+async function startApp(){
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('appMain').style.display = 'block';
+  updateModeBadge();
+  setStatus('Cargando registro guardado…');
+  try{
+    records = await loadAllRecords();
+    setStatus(Object.keys(records).length ? 'Registro cargado.' : 'Sin registro previo — pega tu primera lista.');
+  }catch(e){
+    setStatus('No se pudo cargar el registro: ' + e.message, true);
+    records = {};
+  }
+  render();
+}
+
+document.getElementById('cfgConnectBtn').addEventListener('click', async ()=>{
+  const owner = document.getElementById('cfgOwner').value.trim();
+  const repo = document.getElementById('cfgRepo').value.trim();
+  const token = document.getElementById('cfgToken').value.trim();
+  const errEl = document.getElementById('setupError');
+  errEl.style.display = 'none';
+  if(!owner || !repo || !token){
+    errEl.textContent = 'Completa usuario, repositorio y token.';
+    errEl.style.display = 'block';
+    return;
+  }
+  document.getElementById('cfgConnectBtn').disabled = true;
+  document.getElementById('cfgConnectBtn').textContent = 'Verificando…';
+  setGhConfig({owner, repo, token, path:'data.json'});
+  try{
+    await ghLoad();
+    if(ghCache.sha === null){
+      // El archivo aún no existe en el repo: lo crea vacío para confirmar que el token tiene permiso de escritura.
+      ghCache.data = {};
+      await ghSaveAll();
+    }
+    STORAGE_MODE = 'github';
+    await startApp();
+  }catch(e){
+    clearGhConfig();
+    errEl.textContent = 'No se pudo conectar: ' + e.message + '. Revisa el usuario, el nombre del repositorio y que el token tenga permiso "Contents: Read and write" para ese repo.';
+    errEl.style.display = 'block';
+  }
+  document.getElementById('cfgConnectBtn').disabled = false;
+  document.getElementById('cfgConnectBtn').textContent = 'Conectar y verificar';
+});
+
+document.getElementById('cfgLocalBtn').addEventListener('click', async ()=>{
+  STORAGE_MODE = 'local';
+  await startApp();
+});
+
+document.getElementById('gearBtn').addEventListener('click', ()=>{
+  if(!confirm('Esto va a pedirte reconectar el guardado en este dispositivo. Tus datos guardados en GitHub o en este navegador no se borran. ¿Continuar?')) return;
+  const cfg = getGhConfig();
+  showSetupScreen(cfg);
+});
+
+(function boot(){
+  if(window.storage && typeof window.storage.get === 'function'){
+    STORAGE_MODE = 'claude';
+    startApp();
+    return;
+  }
+  if(hasGhConfig()){
+    STORAGE_MODE = 'github';
+    startApp().catch(()=>{ showSetupScreen(getGhConfig()); });
+    return;
+  }
+  showSetupScreen();
+})();
+</script>
+</body>
+</html>
