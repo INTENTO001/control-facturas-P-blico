@@ -203,7 +203,7 @@
         <button class="btn-primary" id="processBtn">Procesar lo pegado</button>
         <span id="status"></span>
       </div>
-      <div class="help">Puedes pegar los 3 filtros o solo algunos — se procesa lo que tenga contenido. El archivado automático de líneas ya completadas (transferidas) solo ocurre cuando pegas los 3 el mismo día, para no archivar por error algo que solo cambió de etapa.</div>
+      <div class="help">Puedes pegar los 3 filtros o solo algunos — se procesa lo que tenga contenido. El archivado automático de líneas normales (que sí pasan por Costeo y TR) solo ocurre cuando pegas los 3 filtros el mismo día. Las órdenes con <strong>Tipo VIRTUAL</strong> son la excepción: no pasan por Costeo ni TR, así que en cuanto desaparecen del filtro de EM (pegando solo ese) se marcan como completadas automáticamente, con una nota que lo indica.</div>
     </div>
 
     <div class="summary">
@@ -365,23 +365,32 @@ function parsePasted(text){
   const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0);
   if(lines.length < 2) return {error:'Pega al menos la fila de encabezados y una fila de datos.'};
 
-  const delim = lines[0].includes('\t') ? '\t' : ',';
-  const header = lines[0].split(delim).map(normalize);
-
-  const colIdx = {};
-  header.forEach((h,i)=>{
-    if(HEADER_MAP[h] && colIdx[HEADER_MAP[h]] === undefined){
-      colIdx[HEADER_MAP[h]] = i;
+  // Busca la fila de encabezados real (la que contiene "O.Compra"), ignorando cualquier
+  // línea previa como títulos, migas de pan ("MERCANTIL | Inicio"), etc.
+  let headerLineIdx = -1, delim = '\t', colIdx = {};
+  for(let i=0;i<lines.length;i++){
+    const testDelim = lines[i].includes('\t') ? '\t' : (lines[i].includes(',') ? ',' : null);
+    if(!testDelim) continue;
+    const cells = lines[i].split(testDelim).map(normalize);
+    const idx = {};
+    cells.forEach((h,ci)=>{
+      if(HEADER_MAP[h] && idx[HEADER_MAP[h]] === undefined) idx[HEADER_MAP[h]] = ci;
+    });
+    if(idx.oc !== undefined){
+      headerLineIdx = i;
+      delim = testDelim;
+      colIdx = idx;
+      break;
     }
-  });
+  }
 
-  if(colIdx.oc === undefined){
-    return {error:'No se detectó la columna "O.Compra" en el encabezado pegado. Verifica que copiaste la tabla con encabezados incluidos.'};
+  if(headerLineIdx === -1){
+    return {error:'No se detectó la columna "O.Compra" en ninguna línea pegada. Verifica que copiaste la tabla con su fila de encabezados incluida.'};
   }
 
   const rows = [];
   const dupCounter = {};
-  for(let i=1;i<lines.length;i++){
+  for(let i=headerLineIdx+1;i<lines.length;i++){
     const cells = lines[i].split(delim);
     const oc = (cells[colIdx.oc]||'').trim();
     if(!oc) continue;
@@ -513,14 +522,39 @@ async function processToday(){
 
   const allThreePasted = STAGE_ORDER.every(s => parsedByStage[s] !== undefined);
   let archivedCount = 0;
+  const dateShort = new Date().toLocaleDateString('es-PE', {day:'2-digit', month:'2-digit'});
+
+  function markCompletado(rec, motivo){
+    rec.etapa = 'completado';
+    rec.fechaCompletado = todayISO;
+    rec.ultimaActualizacion = todayISO;
+    const tag = motivo + ' el ' + dateShort;
+    rec.nota = rec.nota ? (rec.nota + ' · ' + tag) : tag;
+    archivedCount++;
+  }
+
+  // Las órdenes Tipo VIRTUAL no pasan por Costeo ni TR: en cuanto desaparecen
+  // del filtro de su etapa actual (solo con ese filtro pegado, sin esperar a los otros 2),
+  // se dan por completadas.
+  for(const stage of STAGE_ORDER){
+    if(!parsedByStage[stage]) continue;
+    for(const key in records){
+      const rec = records[key];
+      if(rec.etapa !== stage || seenToday[key]) continue;
+      const esVirtual = (rec.tipo||'').toUpperCase().indexOf('VIRTUAL') !== -1;
+      if(esVirtual){
+        markCompletado(rec, 'Completado automáticamente (VIRTUAL, no pasa por Costeo/TR)');
+      }
+    }
+  }
+
+  // Para el resto (flujo normal EM → Costeo → TR), solo se archiva si se pegaron
+  // los 3 filtros el mismo día y la línea no aparece en ninguno.
   if(allThreePasted){
     for(const key in records){
       const rec = records[key];
       if(rec.etapa !== 'completado' && !seenToday[key]){
-        rec.etapa = 'completado';
-        rec.fechaCompletado = todayISO;
-        rec.ultimaActualizacion = todayISO;
-        archivedCount++;
+        markCompletado(rec, 'Completado automáticamente (transferencia realizada)');
       }
     }
   }
@@ -529,7 +563,7 @@ async function processToday(){
     await persistRecords();
     let msg = 'Listo — ' + totalRows + ' línea(s) actualizadas.';
     if(archivedCount>0) msg += ' ' + archivedCount + ' completadas automáticamente.';
-    if(!allThreePasted) msg += ' (Pega los 3 filtros para activar el archivado automático.)';
+    if(!allThreePasted) msg += ' (Pega los 3 filtros para activar el archivado automático de las no-VIRTUAL.)';
     setStatus(msg);
   }catch(e){
     setStatus('Se procesó localmente pero falló el guardado: ' + e.message, true);
@@ -620,7 +654,7 @@ function render(){
   }
 
   let html = '<table><thead><tr>' +
-    '<th>O.Compra</th><th>F.Reserva</th><th>Proveedor</th><th>División</th><th>Contened.</th><th>Días pend.</th>' +
+    '<th>O.Compra</th><th>F.Reserva</th><th>Proveedor</th><th>División</th><th>Tipo</th><th>Contened.</th><th>Días pend.</th>' +
     '<th>Fecha entrega</th><th>Lugar</th><th>Etapa</th><th>Comentario</th><th>Actualizado</th>' +
     '</tr></thead><tbody>';
 
@@ -628,11 +662,13 @@ function render(){
   for(const r of list){
     const sameAsPrev = r.oc === prevOc;
     prevOc = r.oc;
+    const esVirtual = (r.tipo||'').toUpperCase().indexOf('VIRTUAL') !== -1;
     html += '<tr>' +
       '<td class="oc">'+(sameAsPrev ? '' : escapeHtml(r.oc))+'</td>' +
       '<td>'+escapeHtml(r.freserva||'—')+'</td>' +
       '<td>'+escapeHtml(r.proveedor||'—')+'</td>' +
       '<td>'+escapeHtml(r.division||'—')+'</td>' +
+      '<td>'+(esVirtual ? '<span class="pill tr" style="background:var(--gray-bg);color:var(--ink-soft);">⚡ VIRTUAL</span>' : escapeHtml(r.tipo||'—'))+'</td>' +
       '<td class="dias">'+escapeHtml(r.contenedores||'—')+'</td>' +
       '<td class="dias">'+escapeHtml(r.dias||'—')+'</td>' +
       '<td>'+escapeHtml(r.fechaEntrega||'—')+'</td>' +
