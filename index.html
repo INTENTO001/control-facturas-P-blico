@@ -216,12 +216,18 @@
     </div>
 
     <div class="card">
-      <div class="tabs" id="tabs">
-        <div class="tab active" data-filter="em">EM pendiente</div>
-        <div class="tab" data-filter="costeo">Costeo pendiente</div>
-        <div class="tab" data-filter="tr">TR pendiente</div>
-        <div class="tab" data-filter="completado">Completadas</div>
-        <div class="tab" data-filter="todas">Todas</div>
+      <div class="tabs-row" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+        <div class="tabs" id="tabs" style="margin-bottom:0;">
+          <div class="tab active" data-filter="em">EM pendiente</div>
+          <div class="tab" data-filter="costeo">Costeo pendiente</div>
+          <div class="tab" data-filter="tr">TR pendiente</div>
+          <div class="tab" data-filter="completado">Completadas</div>
+          <div class="tab" data-filter="todas">Todas</div>
+        </div>
+        <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:var(--ink-soft); cursor:pointer; white-space:nowrap;">
+          <input type="checkbox" id="onlyCommentToggle" style="width:15px; height:15px; cursor:pointer;">
+          Solo con comentario
+        </label>
       </div>
       <div id="tableHost"></div>
       <div class="footer-row">
@@ -333,6 +339,7 @@ const ETAPAS = [
 ];
 
 let currentFilter = 'em';
+let onlyWithComment = false;
 let records = {};
 
 function setStatus(msg, isError){
@@ -637,6 +644,10 @@ function render(){
   else if(currentFilter==='completado') list = completado;
   else list = all;
 
+  if(onlyWithComment){
+    list = list.filter(r => (r.nota||'').trim().length > 0);
+  }
+
   list = list.slice().sort((a,b)=>{
     if(a.oc !== b.oc) return a.oc.localeCompare(b.oc, undefined, {numeric:true});
     const da = parseFloat(a.dias); const db = parseFloat(b.dias);
@@ -715,6 +726,10 @@ document.getElementById('tabs').addEventListener('click', (e)=>{
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   tab.classList.add('active');
   currentFilter = tab.dataset.filter;
+  render();
+});
+document.getElementById('onlyCommentToggle').addEventListener('change', (e)=>{
+  onlyWithComment = e.target.checked;
   render();
 });
 
