@@ -17,6 +17,8 @@
     --amber-bg:#FFF1D9;
     --rose:#B0143C;
     --rose-bg:#FBE3EA;
+    --indigo:#3348A6;
+    --indigo-bg:#E4E9FB;
     --gray-bg:#EDEFF2;
     --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
     --sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -26,7 +28,7 @@
     margin:0; font-family:var(--sans); background:var(--bg); color:var(--ink);
     -webkit-font-smoothing:antialiased;
   }
-  .wrap{max-width:1180px;margin:0 auto;padding:24px 20px 60px;}
+  .wrap{max-width:1220px;margin:0 auto;padding:24px 20px 60px;}
   .top{
     background:var(--navy); color:#fff; border-radius:12px; padding:20px 24px;
     margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
@@ -52,13 +54,21 @@
   .card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px 20px; margin-bottom:16px;}
   .card h2{font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin:0 0 10px;}
 
-  textarea{
-    width:100%; min-height:110px; resize:vertical; border:1px solid var(--line); border-radius:8px;
-    padding:10px 12px; font-family:var(--mono); font-size:12.5px; color:var(--ink); background:#FBFBFC;
+  .stagegrid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+  .stagebox{border:1px solid var(--line); border-radius:10px; padding:12px 14px; background:#FBFBFC;}
+  .stagebox .stitle{font-size:12.5px; font-weight:700; margin-bottom:3px; display:flex; align-items:center; gap:6px;}
+  .stagebox .sdot{width:8px; height:8px; border-radius:50%; display:inline-block;}
+  .stagebox.em .sdot{background:var(--amber);}
+  .stagebox.costeo .sdot{background:var(--rose);}
+  .stagebox.tr .sdot{background:var(--indigo);}
+  .stagebox .shint{font-size:11px; color:var(--ink-soft); margin-bottom:8px; line-height:1.5;}
+  .stagebox textarea{
+    width:100%; min-height:100px; resize:vertical; border:1px solid var(--line); border-radius:8px;
+    padding:8px 10px; font-family:var(--mono); font-size:11.5px; color:var(--ink); background:#fff;
   }
-  textarea:focus{outline:2px solid var(--teal); outline-offset:1px;}
+  .stagebox textarea:focus{outline:2px solid var(--teal); outline-offset:1px;}
 
-  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;}
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px;}
   button{
     font-family:var(--sans); font-size:13px; font-weight:600; border:none; border-radius:8px;
     padding:9px 16px; cursor:pointer; transition:opacity .15s;
@@ -72,16 +82,17 @@
   .btn-link{background:transparent; color:var(--teal); padding:6px 0; text-decoration:underline; font-size:12.5px;}
   #status{font-size:12px; color:var(--ink-soft);}
 
-  .summary{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px;}
+  .summary{display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:16px;}
   .stat{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px;}
-  .stat .n{font-family:var(--mono); font-size:26px; font-weight:600;}
-  .stat .l{font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; margin-top:2px;}
-  .stat.revisar .n{color:var(--rose);}
-  .stat.confirmadas .n{color:var(--teal);}
-  .stat.archivadas .n{color:var(--ink-soft);}
+  .stat .n{font-family:var(--mono); font-size:24px; font-weight:600;}
+  .stat .l{font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; margin-top:2px;}
+  .stat.em .n{color:var(--amber);}
+  .stat.costeo .n{color:var(--rose);}
+  .stat.tr .n{color:var(--indigo);}
+  .stat.completado .n{color:var(--teal);}
   .stat.total .n{color:var(--ink);}
 
-  .tabs{display:flex; gap:6px; margin-bottom:12px;}
+  .tabs{display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap;}
   .tab{
     padding:7px 14px; border-radius:20px; font-size:12.5px; font-weight:600; cursor:pointer;
     background:var(--gray-bg); color:var(--ink-soft); border:1px solid transparent;
@@ -98,20 +109,19 @@
   .oc{font-family:var(--mono); font-weight:600;}
   .dias{font-family:var(--mono); text-align:center;}
   .pill{
-    display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;
+    display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap;
   }
-  .pill.nuevo{background:var(--amber-bg); color:var(--amber);}
-  .pill.pendiente{background:var(--rose-bg); color:var(--rose);}
-  .pill.confirmada{background:var(--teal-bg); color:var(--teal);}
-  .pill.no_aplica{background:var(--gray-bg); color:var(--ink-soft);}
-  .pill.archivada{background:var(--gray-bg); color:var(--ink-soft);}
+  .pill.em{background:var(--amber-bg); color:var(--amber);}
+  .pill.costeo{background:var(--rose-bg); color:var(--rose);}
+  .pill.tr{background:var(--indigo-bg); color:var(--indigo);}
+  .pill.completado{background:var(--teal-bg); color:var(--teal);}
 
-  select.estado-select{
+  select.etapa-select{
     font-family:var(--sans); font-size:12px; font-weight:600; border-radius:6px; border:1px solid var(--line);
     padding:5px 6px; background:#fff; color:var(--ink);
   }
   input.nota{
-    width:150px; font-size:12px; border:1px solid var(--line); border-radius:6px; padding:5px 7px;
+    width:170px; font-size:12px; border:1px solid var(--line); border-radius:6px; padding:5px 7px;
     font-family:var(--sans);
   }
   .muted{color:var(--ink-soft); font-size:11.5px;}
@@ -128,6 +138,7 @@
   .field .hint{font-size:11px; color:var(--ink-soft); margin-top:4px;}
   #setupError{font-size:12.5px; color:var(--rose); margin-top:10px; display:none;}
   #setupScreen{display:none;}
+  @media (max-width: 900px){ .stagegrid{grid-template-columns:1fr;} .summary{grid-template-columns:repeat(2,1fr);} }
 </style>
 </head>
 <body>
@@ -136,7 +147,7 @@
   <div class="top">
     <div>
       <h1>Control de Facturas — Seguimiento COMEX</h1>
-      <p>Solo revisa lo que cambió desde ayer. Lo confirmado y lo ya recibido no vuelve a aparecer.</p>
+      <p>EM → Costeo → TR. Cada línea avanza sola de sección, con sus comentarios.</p>
     </div>
     <div class="right">
       <span class="modebadge" id="modeBadge" style="display:none;"></span>
@@ -170,27 +181,45 @@
 
   <div id="appMain" style="display:none;">
     <div class="card">
-      <h2>1. Pegar la lista de hoy</h2>
-      <textarea id="pasteArea" placeholder="Pega aquí la tabla copiada con el botón 'Copy' del sistema (o el contenido del Excel), incluyendo la fila de encabezados: #, Compra, O.Compra, F.Reserva, Días pendientes, Cant.Contenedor, Proveedor, etc."></textarea>
+      <h2>1. Pegar los filtros de hoy</h2>
+      <div class="stagegrid">
+        <div class="stagebox em">
+          <div class="stitle"><span class="sdot"></span>EM pendiente (a costear)</div>
+          <div class="shint">En el sitio: Tipo Reporte = COMEX, Estado EM = PENDIENTE, Desde = 1° del mes, Hasta = último día del mes.</div>
+          <textarea id="pasteEM" placeholder="Pega aquí la tabla de este filtro…"></textarea>
+        </div>
+        <div class="stagebox costeo">
+          <div class="stitle"><span class="sdot"></span>Costeo pendiente</div>
+          <div class="shint">Estado EM = FINALIZADO, Estado Costeo = PENDIENTE.</div>
+          <textarea id="pasteCosteo" placeholder="Pega aquí la tabla de este filtro…"></textarea>
+        </div>
+        <div class="stagebox tr">
+          <div class="stitle"><span class="sdot"></span>Transferencia pendiente</div>
+          <div class="shint">Estado EM = FINALIZADO, Estado Costeo = FINALIZADO, Estado TR = PENDIENTE.</div>
+          <textarea id="pasteTR" placeholder="Pega aquí la tabla de este filtro…"></textarea>
+        </div>
+      </div>
       <div class="row">
-        <button class="btn-primary" id="processBtn">Procesar lista de hoy</button>
+        <button class="btn-primary" id="processBtn">Procesar lo pegado</button>
         <span id="status"></span>
       </div>
-      <div class="help">La herramienta detecta las columnas por su nombre (O.Compra, F.Reserva, Proveedor, Días pendientes, Cant.Contenedor, División, Fecha Entrega, Lugar Entrega). Solo necesita que la primera línea pegada sea el encabezado.</div>
+      <div class="help">Puedes pegar los 3 filtros o solo algunos — se procesa lo que tenga contenido. El archivado automático de líneas ya completadas (transferidas) solo ocurre cuando pegas los 3 el mismo día, para no archivar por error algo que solo cambió de etapa.</div>
     </div>
 
     <div class="summary">
-      <div class="stat revisar"><div class="n" id="statRevisar">–</div><div class="l">Por revisar</div></div>
-      <div class="stat confirmadas"><div class="n" id="statConfirmadas">–</div><div class="l">Confirmadas</div></div>
-      <div class="stat archivadas"><div class="n" id="statArchivadas">–</div><div class="l">Recibidas / archivadas</div></div>
+      <div class="stat em"><div class="n" id="statEM">–</div><div class="l">EM pendiente</div></div>
+      <div class="stat costeo"><div class="n" id="statCosteo">–</div><div class="l">Costeo pendiente</div></div>
+      <div class="stat tr"><div class="n" id="statTR">–</div><div class="l">TR pendiente</div></div>
+      <div class="stat completado"><div class="n" id="statCompletado">–</div><div class="l">Completadas</div></div>
       <div class="stat total"><div class="n" id="statTotal">–</div><div class="l">Total en registro</div></div>
     </div>
 
     <div class="card">
       <div class="tabs" id="tabs">
-        <div class="tab active" data-filter="revisar">Por revisar</div>
-        <div class="tab" data-filter="confirmada">Confirmadas</div>
-        <div class="tab" data-filter="archivada">Archivadas</div>
+        <div class="tab active" data-filter="em">EM pendiente</div>
+        <div class="tab" data-filter="costeo">Costeo pendiente</div>
+        <div class="tab" data-filter="tr">TR pendiente</div>
+        <div class="tab" data-filter="completado">Completadas</div>
         <div class="tab" data-filter="todas">Todas</div>
       </div>
       <div id="tableHost"></div>
@@ -205,11 +234,8 @@
 
 <script>
 /* ======================= MODO DE GUARDADO ======================= */
-// 'claude'  -> dentro de Claude, usa window.storage (persistente, no requiere config)
-// 'github'  -> fuera de Claude, guarda un único archivo JSON en un repo de GitHub (multi-dispositivo)
-// 'local'   -> fuera de Claude, guarda en localStorage de este navegador (respaldo simple, un solo dispositivo)
 let STORAGE_MODE = null;
-let ghCache = null; // {data:{}, sha:string|null}
+let ghCache = null;
 
 function getGhConfig(){
   return {
@@ -297,7 +323,15 @@ const todayISO = new Date().toISOString().slice(0,10);
 const todayDisplay = new Date().toLocaleDateString('es-PE', {day:'2-digit', month:'2-digit', year:'numeric'});
 document.getElementById('todayBadge').textContent = 'Hoy · ' + todayDisplay;
 
-let currentFilter = 'revisar';
+const STAGE_ORDER = ['em','costeo','tr'];
+const ETAPAS = [
+  ['em','EM pendiente (a costear)'],
+  ['costeo','Costeo pendiente'],
+  ['tr','Transferencia pendiente'],
+  ['completado','Completado']
+];
+
+let currentFilter = 'em';
 let records = {};
 
 function setStatus(msg, isError){
@@ -363,9 +397,6 @@ function parsePasted(text){
       freserva: colIdx.freserva!==undefined ? (cells[colIdx.freserva]||'').trim() : '',
       contenedores: colIdx.contenedores!==undefined ? (cells[colIdx.contenedores]||'').trim() : '',
     };
-    // Una misma O.Compra puede repetirse en varias filas (una por contenedor/embarque),
-    // cada una con su propia Fecha Entrega y Días pendientes. Se arma una clave compuesta
-    // para no perder esas filas al guardar.
     const base = [row.oc, row.freserva, row.fechaEntrega].filter(Boolean).join('__') || row.oc;
     dupCounter[base] = (dupCounter[base]||0) + 1;
     row.lineKey = dupCounter[base] > 1 ? base + '__' + dupCounter[base] : base;
@@ -401,15 +432,12 @@ async function loadAllRecords(){
     if(!ghCache) await ghLoad();
     return ghCache.data || {};
   }
-  // local
   try{
     const raw = localStorage.getItem('cf_records');
     return raw ? JSON.parse(raw) : {};
   }catch(e){ return {}; }
 }
 
-// Guarda TODO el estado actual en el backend correspondiente, en una sola operación
-// (para GitHub esto evita crear un commit por cada fila cuando se procesa la lista del día).
 async function persistRecords(){
   if(STORAGE_MODE === 'claude'){
     for(const key in records){
@@ -427,75 +455,90 @@ async function persistRecords(){
   localStorage.setItem('cf_records', JSON.stringify(records));
 }
 
+function mergeRow(existing, row, stage){
+  return {
+    lineKey: row.lineKey,
+    oc: row.oc,
+    proveedor: row.proveedor || (existing && existing.proveedor) || '',
+    dias: row.dias,
+    division: row.division || (existing && existing.division) || '',
+    tipoCompra: row.tipoCompra || (existing && existing.tipoCompra) || '',
+    tipo: row.tipo || (existing && existing.tipo) || '',
+    fechaEntrega: row.fechaEntrega || (existing && existing.fechaEntrega) || '',
+    lugarEntrega: row.lugarEntrega || (existing && existing.lugarEntrega) || '',
+    freserva: row.freserva || (existing && existing.freserva) || '',
+    contenedores: row.contenedores || (existing && existing.contenedores) || '',
+    etapa: stage,
+    nota: existing ? (existing.nota || '') : '',
+    primeraVez: existing ? existing.primeraVez : todayISO,
+    ultimaActualizacion: todayISO
+  };
+}
+
 async function processToday(){
-  const text = document.getElementById('pasteArea').value;
-  const parsed = parsePasted(text);
-  if(parsed.error){
-    setStatus(parsed.error, true);
-    return;
+  const boxes = [
+    {stage:'em', text: document.getElementById('pasteEM').value},
+    {stage:'costeo', text: document.getElementById('pasteCosteo').value},
+    {stage:'tr', text: document.getElementById('pasteTR').value},
+  ];
+
+  const parsedByStage = {};
+  let errorMsg = null;
+  let pastedCount = 0;
+  for(const box of boxes){
+    if(!box.text.trim()) continue;
+    pastedCount++;
+    const parsed = parsePasted(box.text);
+    if(parsed.error){ errorMsg = 'Filtro "' + box.stage + '": ' + parsed.error; break; }
+    parsedByStage[box.stage] = parsed.rows;
   }
+  if(errorMsg){ setStatus(errorMsg, true); return; }
+  if(pastedCount === 0){ setStatus('Pega al menos uno de los 3 filtros para procesar.', true); return; }
+
   setStatus('Procesando…');
   document.getElementById('processBtn').disabled = true;
 
-  const seenToday = new Set();
-
-  for(const row of parsed.rows){
-    seenToday.add(row.lineKey);
-    const existing = records[row.lineKey];
-    if(existing){
-      const wasArchived = existing.estado === 'archivada';
-      records[row.lineKey] = {
-        ...existing,
-        proveedor: row.proveedor || existing.proveedor,
-        dias: row.dias,
-        division: row.division || existing.division,
-        tipoCompra: row.tipoCompra || existing.tipoCompra,
-        tipo: row.tipo || existing.tipo,
-        fechaEntrega: row.fechaEntrega || existing.fechaEntrega,
-        lugarEntrega: row.lugarEntrega || existing.lugarEntrega,
-        freserva: row.freserva || existing.freserva,
-        contenedores: row.contenedores || existing.contenedores,
-        ultimaActualizacion: todayISO,
-        estado: wasArchived ? 'pendiente' : existing.estado,
-        nota: wasArchived ? (existing.nota ? existing.nota + ' · reapareció en lista' : 'Reapareció en lista') : existing.nota
-      };
-    } else {
-      records[row.lineKey] = {
-        lineKey: row.lineKey,
-        oc: row.oc,
-        proveedor: row.proveedor,
-        dias: row.dias,
-        division: row.division,
-        tipoCompra: row.tipoCompra,
-        tipo: row.tipo,
-        fechaEntrega: row.fechaEntrega,
-        lugarEntrega: row.lugarEntrega,
-        freserva: row.freserva,
-        contenedores: row.contenedores,
-        estado: 'nuevo',
-        nota: '',
-        primeraVez: todayISO,
-        ultimaActualizacion: todayISO
-      };
+  const seenToday = {};
+  let totalRows = 0;
+  for(const stage of STAGE_ORDER){
+    const rows = parsedByStage[stage];
+    if(!rows) continue;
+    for(const row of rows){
+      seenToday[row.lineKey] = stage;
+      records[row.lineKey] = mergeRow(records[row.lineKey], row, stage);
+      delete records[row.lineKey].fechaCompletado;
+      totalRows++;
     }
   }
 
-  for(const key in records){
-    if(!seenToday.has(key) && records[key].estado !== 'archivada'){
-      records[key].estado = 'archivada';
-      records[key].fechaArchivo = todayISO;
+  const allThreePasted = STAGE_ORDER.every(s => parsedByStage[s] !== undefined);
+  let archivedCount = 0;
+  if(allThreePasted){
+    for(const key in records){
+      const rec = records[key];
+      if(rec.etapa !== 'completado' && !seenToday[key]){
+        rec.etapa = 'completado';
+        rec.fechaCompletado = todayISO;
+        rec.ultimaActualizacion = todayISO;
+        archivedCount++;
+      }
     }
   }
 
   try{
     await persistRecords();
-    setStatus('Listo — ' + parsed.rows.length + ' líneas procesadas y guardadas.');
+    let msg = 'Listo — ' + totalRows + ' línea(s) actualizadas.';
+    if(archivedCount>0) msg += ' ' + archivedCount + ' completadas automáticamente.';
+    if(!allThreePasted) msg += ' (Pega los 3 filtros para activar el archivado automático.)';
+    setStatus(msg);
   }catch(e){
     setStatus('Se procesó localmente pero falló el guardado: ' + e.message, true);
   }
 
   document.getElementById('processBtn').disabled = false;
-  document.getElementById('pasteArea').value = '';
+  document.getElementById('pasteEM').value = '';
+  document.getElementById('pasteCosteo').value = '';
+  document.getElementById('pasteTR').value = '';
   render();
 }
 
@@ -504,8 +547,9 @@ async function updateField(key, field, value){
   if(!rec) return;
   rec[field] = value;
   rec.ultimaActualizacion = todayISO;
-  if(field === 'estado' && value !== 'archivada'){
-    delete rec.fechaArchivo;
+  if(field === 'etapa'){
+    if(value === 'completado') rec.fechaCompletado = todayISO;
+    else delete rec.fechaCompletado;
   }
   render();
   try{
@@ -533,34 +577,29 @@ async function resetAll(){
   setStatus('Registro borrado.');
 }
 
-const ESTADOS = [
-  ['nuevo','Nuevo, por revisar'],
-  ['pendiente','Pendiente, en seguimiento'],
-  ['confirmada','Confirmada'],
-  ['no_aplica','No aplica'],
-  ['archivada','Recibido / archivado']
-];
-
-function pillLabel(estado){
-  const found = ESTADOS.find(e=>e[0]===estado);
-  return found ? found[1] : estado;
+function etapaLabel(etapa){
+  const found = ETAPAS.find(e=>e[0]===etapa);
+  return found ? found[1] : etapa;
 }
 
 function render(){
   const all = Object.values(records);
-  const revisar = all.filter(r => r.estado==='nuevo' || r.estado==='pendiente');
-  const confirmadas = all.filter(r => r.estado==='confirmada');
-  const archivadas = all.filter(r => r.estado==='archivada');
+  const em = all.filter(r=>r.etapa==='em');
+  const costeo = all.filter(r=>r.etapa==='costeo');
+  const tr = all.filter(r=>r.etapa==='tr');
+  const completado = all.filter(r=>r.etapa==='completado');
 
-  document.getElementById('statRevisar').textContent = revisar.length;
-  document.getElementById('statConfirmadas').textContent = confirmadas.length;
-  document.getElementById('statArchivadas').textContent = archivadas.length;
+  document.getElementById('statEM').textContent = em.length;
+  document.getElementById('statCosteo').textContent = costeo.length;
+  document.getElementById('statTR').textContent = tr.length;
+  document.getElementById('statCompletado').textContent = completado.length;
   document.getElementById('statTotal').textContent = all.length;
 
   let list;
-  if(currentFilter==='revisar') list = revisar;
-  else if(currentFilter==='confirmada') list = confirmadas;
-  else if(currentFilter==='archivada') list = archivadas;
+  if(currentFilter==='em') list = em;
+  else if(currentFilter==='costeo') list = costeo;
+  else if(currentFilter==='tr') list = tr;
+  else if(currentFilter==='completado') list = completado;
   else list = all;
 
   list = list.slice().sort((a,b)=>{
@@ -576,13 +615,13 @@ function render(){
   document.getElementById('countLabel').textContent = list.length + ' línea(s) en esta vista';
 
   if(list.length===0){
-    host.innerHTML = '<div class="empty">No hay líneas en esta vista todavía. Pega la lista de hoy arriba para empezar.</div>';
+    host.innerHTML = '<div class="empty">No hay líneas en esta vista todavía. Pega los filtros de hoy arriba para empezar.</div>';
     return;
   }
 
   let html = '<table><thead><tr>' +
     '<th>O.Compra</th><th>F.Reserva</th><th>Proveedor</th><th>División</th><th>Contened.</th><th>Días pend.</th>' +
-    '<th>Fecha entrega</th><th>Lugar</th><th>Estado</th><th>Nota</th><th>Actualizado</th>' +
+    '<th>Fecha entrega</th><th>Lugar</th><th>Etapa</th><th>Comentario</th><th>Actualizado</th>' +
     '</tr></thead><tbody>';
 
   let prevOc = null;
@@ -598,17 +637,17 @@ function render(){
       '<td class="dias">'+escapeHtml(r.dias||'—')+'</td>' +
       '<td>'+escapeHtml(r.fechaEntrega||'—')+'</td>' +
       '<td>'+escapeHtml(r.lugarEntrega||'—')+'</td>' +
-      '<td>'+estadoSelectHtml(r)+'</td>' +
-      '<td><input class="nota" data-key="'+escapeAttr(r.lineKey)+'" data-field="nota" value="'+escapeAttr(r.nota||'')+'" placeholder="ej. visto en correo 21/08"></td>' +
+      '<td>'+etapaSelectHtml(r)+'</td>' +
+      '<td><input class="nota" data-key="'+escapeAttr(r.lineKey)+'" data-field="nota" value="'+escapeAttr(r.nota||'')+'" placeholder="ej. coordinado con logística"></td>' +
       '<td class="muted">'+(r.ultimaActualizacion||'—')+'</td>' +
       '</tr>';
   }
   html += '</tbody></table>';
   host.innerHTML = html;
 
-  host.querySelectorAll('select.estado-select').forEach(sel=>{
+  host.querySelectorAll('select.etapa-select').forEach(sel=>{
     sel.addEventListener('change', (e)=>{
-      updateField(e.target.dataset.key, 'estado', e.target.value);
+      updateField(e.target.dataset.key, 'etapa', e.target.value);
     });
   });
   host.querySelectorAll('input.nota').forEach(inp=>{
@@ -618,12 +657,12 @@ function render(){
   });
 }
 
-function estadoSelectHtml(r){
-  let opts = ESTADOS.map(([val,label])=>
-    '<option value="'+val+'" '+(r.estado===val?'selected':'')+'>'+label+'</option>'
+function etapaSelectHtml(r){
+  let opts = ETAPAS.map(([val,label])=>
+    '<option value="'+val+'" '+(r.etapa===val?'selected':'')+'>'+label+'</option>'
   ).join('');
-  return '<span class="pill '+r.estado+'">'+pillLabel(r.estado)+'</span> ' +
-    '<select class="estado-select" data-key="'+escapeAttr(r.lineKey)+'">'+opts+'</select>';
+  return '<span class="pill '+r.etapa+'">'+etapaLabel(r.etapa)+'</span> ' +
+    '<select class="etapa-select" data-key="'+escapeAttr(r.lineKey)+'">'+opts+'</select>';
 }
 
 function escapeHtml(s){
@@ -682,7 +721,10 @@ async function startApp(){
   setStatus('Cargando registro guardado…');
   try{
     records = await loadAllRecords();
-    setStatus(Object.keys(records).length ? 'Registro cargado.' : 'Sin registro previo — pega tu primera lista.');
+    for(const k in records){
+      if(!records[k].etapa) records[k].etapa = 'em';
+    }
+    setStatus(Object.keys(records).length ? 'Registro cargado.' : 'Sin registro previo — pega tus primeros filtros.');
   }catch(e){
     setStatus('No se pudo cargar el registro: ' + e.message, true);
     records = {};
@@ -707,7 +749,6 @@ document.getElementById('cfgConnectBtn').addEventListener('click', async ()=>{
   try{
     await ghLoad();
     if(ghCache.sha === null){
-      // El archivo aún no existe en el repo: lo crea vacío para confirmar que el token tiene permiso de escritura.
       ghCache.data = {};
       await ghSaveAll();
     }
