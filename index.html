@@ -204,7 +204,7 @@
         <button class="btn-primary" id="processBtn">Procesar lo pegado</button>
         <span id="status"></span>
       </div>
-      <div class="help">Puedes pegar los 3 filtros o solo algunos — se procesa lo que tenga contenido. El archivado automático de líneas normales (que sí pasan por Costeo y TR) solo ocurre cuando pegas los 3 filtros el mismo día. Las órdenes con <strong>Tipo VIRTUAL</strong> son la excepción: no pasan por Costeo ni TR, así que en cuanto desaparecen del filtro de EM (pegando solo ese) se marcan como completadas automáticamente, con una nota que lo indica.</div>
+      <div class="help">Puedes pegar los 3 filtros o solo algunos — se procesa lo que tenga contenido. Para <strong>EM</strong> y <strong>Costeo</strong>, el archivado automático solo ocurre cuando pegas los 3 filtros el mismo día (para no archivar por error algo que solo avanzó de etapa). Para <strong>Transferencia pendiente</strong> no hace falta esperar: es la última etapa, así que en cuanto una línea desaparece de ese filtro (pegando solo ese) se marca como completada de inmediato. Las órdenes con <strong>Tipo VIRTUAL</strong> son otra excepción: no pasan por Costeo ni TR, así que en cuanto desaparecen del filtro de EM también se completan al instante.</div>
     </div>
 
     <div class="summary">
@@ -544,7 +544,7 @@ async function processToday(){
   // Las órdenes Tipo VIRTUAL no pasan por Costeo ni TR: en cuanto desaparecen
   // del filtro de su etapa actual (solo con ese filtro pegado, sin esperar a los otros 2),
   // se dan por completadas.
-  for(const stage of STAGE_ORDER){
+  for(const stage of ['em','costeo']){
     if(!parsedByStage[stage]) continue;
     for(const key in records){
       const rec = records[key];
@@ -556,8 +556,21 @@ async function processToday(){
     }
   }
 
-  // Para el resto (flujo normal EM → Costeo → TR), solo se archiva si se pegaron
-  // los 3 filtros el mismo día y la línea no aparece en ninguno.
+  // TR pendiente es la última etapa: no hay a dónde más avanzar. Si una línea que estaba
+  // ahí desaparece del filtro de TR (pegando solo ese filtro, sin necesitar los otros 2),
+  // es inequívoco que ya se transfirió.
+  if(parsedByStage.tr){
+    for(const key in records){
+      const rec = records[key];
+      if(rec.etapa === 'tr' && !seenToday[key]){
+        markCompletado(rec, 'Completado automáticamente (transferencia realizada)');
+      }
+    }
+  }
+
+  // Para EM y Costeo sí hay ambigüedad (podrían haber avanzado a la siguiente etapa sin
+  // que lo notes), así que ahí solo se archiva por seguridad si se pegaron los 3 filtros
+  // el mismo día y la línea no aparece en ninguno.
   if(allThreePasted){
     for(const key in records){
       const rec = records[key];
