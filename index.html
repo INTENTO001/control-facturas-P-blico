@@ -204,7 +204,7 @@
         <button class="btn-primary" id="processBtn">Procesar lo pegado</button>
         <span id="status"></span>
       </div>
-      <div class="help">Puedes pegar los 3 filtros o solo algunos — se procesa lo que tenga contenido. Para <strong>EM</strong> y <strong>Costeo</strong>, el archivado automático solo ocurre cuando pegas los 3 filtros el mismo día (para no archivar por error algo que solo avanzó de etapa). Para <strong>Transferencia pendiente</strong> no hace falta esperar: es la última etapa, así que en cuanto una línea desaparece de ese filtro (pegando solo ese) se marca como completada de inmediato. Las órdenes con <strong>Tipo VIRTUAL</strong> son otra excepción: no pasan por Costeo ni TR, así que en cuanto desaparecen del filtro de EM también se completan al instante.</div>
+      <div class="help">Puedes pegar los 3 filtros o solo algunos — se procesa lo que tenga contenido. Para <strong>EM</strong> y <strong>Costeo</strong>, el archivado automático solo ocurre cuando pegas los 3 filtros el mismo día (para no archivar por error algo que solo avanzó de etapa). Para <strong>Transferencia pendiente</strong> no hace falta esperar: es la última etapa, así que en cuanto una línea desaparece de ese filtro se marca como completada de inmediato — <strong>incluso si el filtro te devuelve la tabla vacía (0 resultados)</strong>, siempre que pegues al menos la fila de encabezados para confirmar que sí revisaste ese filtro hoy. Dejar la caja completamente en blanco NO cuenta como confirmación — simplemente se ignora esa etapa ese día. Las órdenes con <strong>Tipo VIRTUAL</strong> son otra excepción: no pasan por Costeo ni TR, así que en cuanto desaparecen del filtro de EM también se completan al instante.</div>
     </div>
 
     <div class="summary">
@@ -419,7 +419,9 @@ function parsePasted(text){
     row.lineKey = dupCounter[base] > 1 ? base + '__' + dupCounter[base] : base;
     rows.push(row);
   }
-  if(rows.length===0) return {error:'No se encontraron filas de datos válidas (sin O.Compra).'};
+  // Si se detectó la fila de encabezados pero no hay filas de datos debajo, se interpreta
+  // como "filtro confirmado, 0 resultados" (no como un error) — útil para reconocer que
+  // una etapa quedó en cero y archivar lo que corresponda.
   return {rows};
 }
 
@@ -583,6 +585,8 @@ async function processToday(){
   try{
     await persistRecords();
     let msg = 'Listo — ' + totalRows + ' línea(s) actualizadas.';
+    const vacios = STAGE_ORDER.filter(s => parsedByStage[s] && parsedByStage[s].length===0);
+    if(vacios.length>0) msg += ' Confirmado en 0: ' + vacios.join(', ') + '.';
     if(archivedCount>0) msg += ' ' + archivedCount + ' completadas automáticamente.';
     if(!allThreePasted) msg += ' (Pega los 3 filtros para activar el archivado automático de las no-VIRTUAL.)';
     setStatus(msg);
