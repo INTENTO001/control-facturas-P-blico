@@ -783,6 +783,27 @@ function updateModeBadge(){
   }
 }
 
+const AUTO_NOTE_RE = /(\s*·\s*)?Completado autom[aá]ticamente \((transferencia realizada|VIRTUAL, no pasa por Costeo\/TR)\)\s*el\s*\d{1,2}\/\d{1,2}/gi;
+
+function limpiarNotasAutomaticas(){
+  let changed = false;
+  for(const k in records){
+    const rec = records[k];
+    if(!rec.nota) continue;
+    const cleaned = rec.nota.replace(AUTO_NOTE_RE, '').replace(/^\s*·\s*|\s*·\s*$/g, '').trim();
+    if(cleaned !== rec.nota){
+      // Si no había motivo guardado (versión vieja), lo conservamos igual antes de limpiar el texto.
+      if(!rec.motivoCompletado){
+        const m = rec.nota.match(AUTO_NOTE_RE);
+        if(m) rec.motivoCompletado = m[0].replace(/^\s*·\s*/, '').replace(/\s*el\s*\d{1,2}\/\d{1,2}$/,'').trim();
+      }
+      rec.nota = cleaned;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 async function startApp(){
   document.getElementById('setupScreen').style.display = 'none';
   document.getElementById('appMain').style.display = 'block';
@@ -792,6 +813,10 @@ async function startApp(){
     records = await loadAllRecords();
     for(const k in records){
       if(!records[k].etapa) records[k].etapa = 'em';
+    }
+    const huboLimpieza = limpiarNotasAutomaticas();
+    if(huboLimpieza){
+      try{ await persistRecords(); }catch(e){ /* si falla, se reintentará en la próxima acción */ }
     }
     setStatus(Object.keys(records).length ? 'Registro cargado.' : 'Sin registro previo — pega tus primeros filtros.');
   }catch(e){
