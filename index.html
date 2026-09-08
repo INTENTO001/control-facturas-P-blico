@@ -538,8 +538,7 @@ async function processToday(){
     rec.etapa = 'completado';
     rec.fechaCompletado = todayISO;
     rec.ultimaActualizacion = todayISO;
-    const tag = motivo + ' el ' + dateShort;
-    rec.nota = rec.nota ? (rec.nota + ' · ' + tag) : tag;
+    rec.motivoCompletado = motivo; // guardado internamente, no se mezcla con tu comentario
     archivedCount++;
   }
 
@@ -726,7 +725,8 @@ function etapaSelectHtml(r){
   let opts = ETAPAS.map(([val,label])=>
     '<option value="'+val+'" '+(r.etapa===val?'selected':'')+'>'+label+'</option>'
   ).join('');
-  return '<span class="pill '+r.etapa+'">'+etapaLabel(r.etapa)+'</span> ' +
+  const titleAttr = r.motivoCompletado ? ' title="'+escapeAttr(r.motivoCompletado + (r.fechaCompletado? (' — ' + r.fechaCompletado) : ''))+'"' : '';
+  return '<span class="pill '+r.etapa+'"'+titleAttr+'>'+etapaLabel(r.etapa)+'</span> ' +
     '<select class="etapa-select" data-key="'+escapeAttr(r.lineKey)+'">'+opts+'</select>';
 }
 
