@@ -224,10 +224,20 @@
           <div class="tab" data-filter="completado">Completadas</div>
           <div class="tab" data-filter="todas">Todas</div>
         </div>
-        <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:var(--ink-soft); cursor:pointer; white-space:nowrap;">
-          <input type="checkbox" id="onlyCommentToggle" style="width:15px; height:15px; cursor:pointer;">
-          Solo con comentario
-        </label>
+        <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+          <select id="divisionFilter" style="font-family:var(--sans); font-size:12.5px; font-weight:600; border-radius:20px; border:1px solid var(--line); padding:6px 10px; background:#fff; color:var(--ink); cursor:pointer;">
+            <option value="">Todas las divisiones</option>
+          </select>
+          <select id="sortMode" style="font-family:var(--sans); font-size:12.5px; font-weight:600; border-radius:20px; border:1px solid var(--line); padding:6px 10px; background:#fff; color:var(--ink); cursor:pointer;">
+            <option value="oc">Orden: por O.Compra</option>
+            <option value="dias_asc">Días pend. ↑ (menor a mayor)</option>
+            <option value="dias_desc">Días pend. ↓ (mayor a menor)</option>
+          </select>
+          <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:var(--ink-soft); cursor:pointer; white-space:nowrap;">
+            <input type="checkbox" id="onlyCommentToggle" style="width:15px; height:15px; cursor:pointer;">
+            Solo con comentario
+          </label>
+        </div>
       </div>
       <div id="tableHost"></div>
       <div class="footer-row">
@@ -310,18 +320,31 @@ async function ghLoad(){
 }
 
 async function ghSaveAll(){
-  const body = {
-    message: 'Actualiza registro de facturas — ' + new Date().toISOString(),
-    content: b64EncodeUnicode(JSON.stringify(ghCache.data, null, 2))
-  };
-  if(ghCache.sha) body.sha = ghCache.sha;
-  const res = await ghApi({method:'PUT', body: JSON.stringify(body), headers:{'Content-Type':'application/json'}});
-  if(!res.ok){
+  for(let intento=0; intento<2; intento++){
+    const body = {
+      message: 'Actualiza registro de facturas — ' + new Date().toISOString(),
+      content: b64EncodeUnicode(JSON.stringify(ghCache.data, null, 2))
+    };
+    if(ghCache.sha) body.sha = ghCache.sha;
+    const res = await ghApi({method:'PUT', body: JSON.stringify(body), headers:{'Content-Type':'application/json'}});
+    if(res.ok){
+      const json = await res.json();
+      ghCache.sha = json.content.sha;
+      return;
+    }
+    if(res.status === 409 && intento === 0){
+      // El archivo cambió por fuera (otra pestaña/dispositivo, o edición manual en GitHub).
+      // Se vuelve a obtener el sha actual y se reintenta una vez, conservando los cambios locales.
+      const getRes = await ghApi();
+      if(getRes.ok){
+        const getJson = await getRes.json();
+        ghCache.sha = getJson.sha;
+        continue;
+      }
+    }
     const t = await res.text().catch(()=> '');
     throw new Error('No se pudo guardar en GitHub (' + res.status + '). ' + t.slice(0,200));
   }
-  const json = await res.json();
-  ghCache.sha = json.content.sha;
 }
 
 /* ======================= NÚCLEO DE LA APP ======================= */
@@ -340,6 +363,8 @@ const ETAPAS = [
 
 let currentFilter = 'em';
 let onlyWithComment = false;
+let divisionFilter = '';
+let sortMode = 'oc';
 let records = {};
 
 function setStatus(msg, isError){
@@ -653,6 +678,14 @@ function render(){
   document.getElementById('statCompletado').textContent = completado.length;
   document.getElementById('statTotal').textContent = all.length;
 
+  // Repuebla el selector de División con lo que exista hoy en el registro, conservando la selección actual.
+  const divSelect = document.getElementById('divisionFilter');
+  const divisiones = Array.from(new Set(all.map(r=>r.division).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
+  const currentDivValue = divSelect.value;
+  divSelect.innerHTML = '<option value="">Todas las divisiones</option>' +
+    divisiones.map(d=>'<option value="'+escapeAttr(d)+'"'+(d===currentDivValue?' selected':'')+'>'+escapeHtml(d)+'</option>').join('');
+  if(divisiones.includes(divisionFilter)) divSelect.value = divisionFilter; else if(divisionFilter && !divisiones.includes(divisionFilter)) divisionFilter = '';
+
   let list;
   if(currentFilter==='em') list = em;
   else if(currentFilter==='costeo') list = costeo;
@@ -663,15 +696,32 @@ function render(){
   if(onlyWithComment){
     list = list.filter(r => (r.nota||'').trim().length > 0);
   }
+  if(divisionFilter){
+    list = list.filter(r => r.division === divisionFilter);
+  }
 
-  list = list.slice().sort((a,b)=>{
-    if(a.oc !== b.oc) return a.oc.localeCompare(b.oc, undefined, {numeric:true});
-    const da = parseFloat(a.dias); const db = parseFloat(b.dias);
-    if(isNaN(da) && isNaN(db)) return 0;
-    if(isNaN(da)) return 1;
-    if(isNaN(db)) return -1;
-    return db - da;
-  });
+  const parseDias = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+
+  if(sortMode === 'dias_asc' || sortMode === 'dias_desc'){
+    const dir = sortMode === 'dias_asc' ? 1 : -1;
+    list = list.slice().sort((a,b)=>{
+      const da = parseDias(a.dias), db = parseDias(b.dias);
+      if(da===null && db===null) return 0;
+      if(da===null) return 1;
+      if(db===null) return -1;
+      if(da !== db) return dir * (da - db);
+      return a.oc.localeCompare(b.oc, undefined, {numeric:true});
+    });
+  } else {
+    list = list.slice().sort((a,b)=>{
+      if(a.oc !== b.oc) return a.oc.localeCompare(b.oc, undefined, {numeric:true});
+      const da = parseDias(a.dias), db = parseDias(b.dias);
+      if(da===null && db===null) return 0;
+      if(da===null) return 1;
+      if(db===null) return -1;
+      return db - da;
+    });
+  }
 
   const host = document.getElementById('tableHost');
   document.getElementById('countLabel').textContent = list.length + ' línea(s) en esta vista';
@@ -688,7 +738,7 @@ function render(){
 
   let prevOc = null;
   for(const r of list){
-    const sameAsPrev = r.oc === prevOc;
+    const sameAsPrev = sortMode === 'oc' && r.oc === prevOc;
     prevOc = r.oc;
     const esVirtual = (r.tipo||'').toUpperCase().indexOf('VIRTUAL') !== -1;
     html += '<tr>' +
@@ -747,6 +797,14 @@ document.getElementById('tabs').addEventListener('click', (e)=>{
 });
 document.getElementById('onlyCommentToggle').addEventListener('change', (e)=>{
   onlyWithComment = e.target.checked;
+  render();
+});
+document.getElementById('divisionFilter').addEventListener('change', (e)=>{
+  divisionFilter = e.target.value;
+  render();
+});
+document.getElementById('sortMode').addEventListener('change', (e)=>{
+  sortMode = e.target.value;
   render();
 });
 
